@@ -42,11 +42,8 @@ func (s *Server) ListenAndServe() error {
 	return s.Serve(l)
 }
 
-// ListenAndServeTLS works like net/http.Server.ListenAndServeTLS except
-// that it gracefully shuts down when Close() is called. When that
-// occurs, no new connections will be allowed and existing connections
-// will be allowed to finish. This will not return until all existing
-// connections have closed.
+// ListenAndServeTLS works like ListenAndServe but with TLS using the
+// given cert and key files.
 func (s *Server) ListenAndServeTLS(certFile, keyFile string) error {
 	addr := s.s.Addr
 	if addr == "" {
@@ -71,11 +68,7 @@ func (s *Server) ListenAndServeTLS(certFile, keyFile string) error {
 	return s.Serve(l)
 }
 
-// Serve works like net/http.Server.Serve except that it gracefully
-// shuts down when Close() is called. When that occurs, no new
-// connections will be allowed and existing connections will be
-// allowed to finish. This will not return until all existing
-// connections have closed.
+// Serve works like ListenAndServer but using the given listener.
 func (s *Server) Serve(l net.Listener) error {
 	s.l = l
 	err := s.s.Serve(&gracefulListener{s.l, s})
@@ -84,7 +77,8 @@ func (s *Server) Serve(l net.Listener) error {
 }
 
 // Close gracefully shuts down the listener. This should be called
-// when the server should stop listening for new connection.
+// when the server should stop listening for new connection and finish
+// any open connections.
 func (s *Server) Close() error {
 	err := s.l.Close()
 	return err
