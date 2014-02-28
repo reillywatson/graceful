@@ -16,17 +16,6 @@ import (
 )
 
 func main() {
-	// Create our server.
-	s := graceful.NewServer(&http.Server{
-		Addr: ":8080",
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Sleep for a bit so we can open some connections and send the
-			// signal.
-			time.Sleep(10 * time.Second)
-			log.Printf("%v %v", r.Method, r.URL)
-			fmt.Fprintln(w, r.Method, r.URL)
-		}),
-	})
 
 	// Listen for the SIGTERM.
 	sigs := make(chan os.Signal)
@@ -34,13 +23,19 @@ func main() {
 	go func() {
 		<-sigs
 		log.Print("got SIGHUP, shutting down.")
-		s.Close()
+		graceful.Close()
 	}()
 
 	// Start the server.
 	fmt.Println("Using PID:", os.Getpid())
-	log.Print(s.ListenAndServe())
-
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// Sleep for a bit so we can open some connections and send the
+		// signal.
+		time.Sleep(10 * time.Second)
+		log.Printf("%v %v", r.Method, r.URL)
+		fmt.Fprintln(w, r.Method, r.URL)
+	})
+	log.Println(graceful.ListenAndServe(":8080", nil))
 	// At this point, try opening a few connection in another
 	// terminal. Then in another, send a TERM kignal.
 	// For example, in terminal one:

@@ -10,6 +10,41 @@ import (
 	"sync"
 )
 
+// DefaultServer is the default Server used by the functions in this
+// package. It's used as to simplify using the graceful server.
+var DefaultServer *Server
+
+// ListenAndServe listens on the TCP network address addr using the
+// DefaultServer. If the handler is nil, http.DefaultServeMux is used.
+func ListenAndServe(addr string, handler http.Handler) error {
+	h := handler
+	if h == nil {
+		h = http.DefaultServeMux
+	}
+	if DefaultServer == nil {
+		DefaultServer = NewServer(&http.Server{Addr: addr, Handler: h})
+	}
+	return DefaultServer.ListenAndServe()
+}
+
+// ListenAndServeTLS acts identically to ListenAndServe except that is
+// expects HTTPS connections using the given certificate and key.
+func ListenAndServeTLS(addr, certFile, keyFile string, handler http.Handler) error {
+	h := handler
+	if h == nil {
+		h = http.DefaultServeMux
+	}
+	if DefaultServer == nil {
+		DefaultServer = NewServer(&http.Server{Addr: addr, Handler: h})
+	}
+	return DefaultServer.ListenAndServeTLS(certFile, keyFile)
+}
+
+// Close gracefully shuts down the DefaultServer.
+func Close() error {
+	return DefaultServer.Close()
+}
+
 // Server is net/http compatible graceful server.
 type Server struct {
 	s  *http.Server
