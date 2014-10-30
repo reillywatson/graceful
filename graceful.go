@@ -1,6 +1,7 @@
 // Package graceful provides a net/http compatible Server that can be
-// crafeully shut down. When closed, open connections are allowed to
-// finish.
+// gracefully shut down. When closed, the server stops accepting new
+// connections. It then waits for open connections to finish before
+// returning.
 package graceful
 
 import (
