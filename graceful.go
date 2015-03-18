@@ -135,18 +135,19 @@ func (g *gracefulListener) Accept() (net.Conn, error) {
 		return nil, err
 	}
 	g.s.wg.Add(1)
-	return &gracefulConn{c, g.s}, nil
+	return &gracefulConn{Conn: c, s: g.s}, nil
 }
 
 // gracefulConn implements the net.Conn interface. When it closes, it
 // calls Done() on the servers waitgroup.
 type gracefulConn struct {
 	net.Conn
-	s *Server
+	s    *Server
+	once sync.Once
 }
 
 func (g *gracefulConn) Close() error {
 	err := g.Conn.Close()
-	g.s.wg.Done()
+	g.once.Do(g.s.wg.Done)
 	return err
 }
