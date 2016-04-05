@@ -36,7 +36,7 @@ func ListenAndServeTLS(addr, certFile, keyFile string, handler http.Handler) err
 		h = http.DefaultServeMux
 	}
 	if DefaultServer == nil {
-		DefaultServer = NewServer(&http.Server{Addr: addr, Handler: h})
+		DefaultServer = NewServer(&http.Server{Addr: addr, Handler: handler, TLSConfig: tlsConfig()})
 	}
 	return DefaultServer.ListenAndServeTLS(certFile, keyFile)
 }
@@ -85,7 +85,7 @@ func (s *Server) ListenAndServeTLS(certFile, keyFile string) error {
 	if addr == "" {
 		addr = ":https"
 	}
-	config := &tls.Config{}
+	config := tlsConfig()
 	if s.s.TLSConfig != nil {
 		*config = *s.s.TLSConfig
 	}
@@ -150,4 +150,23 @@ func (g *gracefulConn) Close() error {
 	err := g.Conn.Close()
 	g.once.Do(g.s.wg.Done)
 	return err
+}
+
+func tlsConfig() *tls.Config {
+	cipherSuites := []uint16{
+		tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+		tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+		tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+		tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+		tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+		tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
+		tls.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,
+		tls.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
+	}
+	return &tls.Config{MinVersion: tls.VersionTLS10, CipherSuites: cipherSuites, PreferServerCipherSuites: true}
 }
